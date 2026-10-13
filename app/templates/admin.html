@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% block body %}
+<h3>Admin</h3>
+{% if invite_link %}<p class="ok">Invite sent. Link (also emailed): <code>{{ invite_link }}</code></p>{% endif %}
+<h4>Question set ({{ question_count }} questions)</h4>
+<form method="post" action="/admin/questions" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+<input type="file" name="file" accept=".xlsx" required> <button>Import Excel (Section | Question | Type)</button></form>
+<h4>Add vendor</h4>
+<form method="post" action="/admin/vendors"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+<p><input type="text" name="name" placeholder="Vendor name" required></p>
+<p><input type="email" name="email" placeholder="Vendor contact email" required></p><button>Create &amp; send invite</button></form>
+<h4>Vendors</h4>
+<table><tr><th>Name</th><th>Email</th><th></th></tr>
+{% for v in vendors %}<tr><td><a href="/admin/vendors/{{ v.id }}">{{ v.name }}</a></td><td>{{ v.email }}</td>
+<td><form method="post" action="/admin/vendors/{{ v.id }}/invite"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button>Re-send invite</button></form></td></tr>{% endfor %}
+</table>
+{% endblock %}

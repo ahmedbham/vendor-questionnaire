@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block body %}
+<p><a href="/admin">&larr; Back</a></p>
+<h3>{{ vendor.name }} <small>({{ status }})</small></h3>
+<p><a href="/admin/vendors/{{ vendor.id }}/export">Export to Excel</a></p>
+<table><tr><th>Section</th><th>Question</th><th>Answer</th></tr>
+{% for q in questions %}<tr><td>{{ q.section }}</td><td>{{ q.text }}</td><td>{{ answers.get(q.id, '') }}</td></tr>{% endfor %}</table>
+<h4>Audit</h4><ul>{% for a in audit %}<li>{{ a.at }} – {{ a.event }}</li>{% endfor %}</ul>
+{% endblock %}

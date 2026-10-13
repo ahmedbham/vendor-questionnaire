@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block body %}
+<p>To protect your responses, we'll email a one-time code to the address Contoso Health invited.</p>
+<form method="post" action="/send-code"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button>Email me a code</button></form>
+{% endblock %}
