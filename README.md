@@ -34,6 +34,59 @@ Set `BASE_URL` app setting to the site URL (used in invite links). Verify the AC
 ## Test mode (no email needed)
 Set the app setting `DEBUG_SHOW_OTP=true`: the verify page then displays the one-time code (and any email error) directly, and the admin page always shows the invite link. **Turn it off (`false`) before real vendors use the app** – it bypasses the email-ownership check.
 
+## Interaction flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Virtua Admin
+    actor V as Vendor
+    participant W as Web App (App Service)
+    participant D as Cosmos DB (partition = vendor_id)
+    participant M as Azure Email (ACS)
+
+    rect rgb(235,245,255)
+    Note over A,W: Admin setup
+    A->>W: Sign in (password + optional TOTP)
+    A->>W: Import question set (.xlsx)
+    W->>D: Save questions (versioned)
+    A->>W: Add vendor (name, contact email)
+    W->>D: Create vendor + hashed invite token (72h)
+    W->>M: Email invite link
+    M-->>V: /invite/{token}
+    end
+
+    rect rgb(240,255,240)
+    Note over V,W: Vendor sign-in (no Entra ID)
+    V->>W: Open invite link
+    W->>D: Validate token, resolve vendor_id
+    V->>W: Request code
+    W->>D: Store hashed OTP (10 min, 5 attempts)
+    W->>M: Email 6-digit code
+    M-->>V: Code
+    V->>W: Submit code
+    W-->>V: Signed session cookie (vendor_id, 4h)
+    end
+
+    rect rgb(255,248,230)
+    Note over V,D: Vendor works only on own data
+    V->>W: Open questionnaire
+    W->>D: Read questions + responses WHERE vendor_id = session
+    V->>W: Save draft / Submit
+    W->>D: Write response under session vendor_id, audit event
+    Note right of W: Submitted answers are locked
+    end
+
+    rect rgb(250,240,255)
+    Note over A,D: Review
+    A->>W: View vendor responses / audit log
+    W->>D: Read any vendor partition (admin only)
+    A->>W: Export to Excel
+    end
+```
+
+Vendor identity is taken only from the signed session, never from a URL or form field, so a vendor can't reach another vendor's partition or the admin pages.
+
 ## Notes
 - Evidence file upload is not included yet; questionnaire answers are text-based.
 - Optionally restrict `/admin` by IP (App Service access restrictions) or front with Front Door/WAF.
